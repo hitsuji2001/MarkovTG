@@ -1,12 +1,22 @@
 #include "./MarkovTextGen.hpp"
 
+// TODO: Cache the input into some sort of file
+// TODO: Maybe try to reading different file type
+// TODO: Fix others todo
+
 namespace markov {
   MarkovTextGen::MarkovTextGen() {
     this->m_UselessCharacters = "[,.\"'!@#$%^&*(){}?/;`~:<>+=_-\\|";
-    this->a_ContextSize = 3;
+    this->a_ContextSize = 2;
   }
 
   MarkovTextGen::~MarkovTextGen() {
+  }
+
+  void MarkovTextGen::SlurpAllFileFromFolder(const std::string& folderPath) {
+    for (const auto& entry : std::filesystem::directory_iterator(folderPath)) {
+      if (MKS_EndsWith(entry.path(), ".txt")) this->FeedTextFromFile(entry.path());
+    }
   }
 
   void MarkovTextGen::FeedTextFromFile(const std::string& filePath) {
@@ -42,12 +52,31 @@ namespace markov {
       auto random_iter = std::next(std::begin(this->GetMarkovModel().state), rand() % this->GetMarkovModel().state.size());
       result = random_iter->first;
     } else {
-      const auto& random_iter = std::next(std::begin(iter->second), rand() % iter->second.size());
-      result = random_iter->first;
+      // TODO: implement weighted random number generator for this
+      //       to properly be a Markov Chain Model
+      result = this->GetWeightedRandomNumber(iter->second);
+      if (result.empty()) {
+	std::cerr << "[ERROR]: Unreachable. Could not random text" << std::endl;
+	exit(1);
+      }
     }
 
     return result;
   }
+
+  const std::string MarkovTextGen::GetWeightedRandomNumber(const std::unordered_map<std::string, float>& map) {
+    int scaler = 100;
+    int sumOfWeight = scaler;
+    int random = rand() % (int)sumOfWeight;
+
+    for (auto i = map.begin(); i != map.end(); ++i) {
+      if (random < i->second * scaler) return i->first;
+      random -= i->second * scaler;
+    }
+
+    return "";
+  }
+
   
   float MarkovTextGen::CalculateSumOfValues(const std::unordered_map<std::string, float>& map) {
     float res = 0.0f;
@@ -61,10 +90,10 @@ namespace markov {
     std::string nextWord;
 
     while(!line.empty()) {
-      key = MKS_SplitWordByDelim(line, ' ', this->GetContextSize());
-      line = MKS_CutLeftByDelim(line, ' ', this->GetContextSize());
+      key = MKS_SplitWordByDelim(line, ' ', this->GetContextSize()).at(0);
       if (line.empty()) break;
-      nextWord = MKS_SplitWordByDelim(line, ' ', this->GetContextSize());
+      nextWord = MKS_SplitWordByDelim(line, ' ', this->GetContextSize()).at(0);
+      if (line.empty()) break;
 
       if (this->GetMarkovModel().state.count(key) == 0) {
 	this->GetMarkovModel().state[key].insert(std::make_pair(nextWord, 1.0f));
@@ -99,9 +128,10 @@ namespace markov {
   }
 
   std::string MarkovTextGen::CleanText(const std::string& text) {
-    std::string result = MKS_Substitute(text, this->m_UselessCharacters, "");
-    result = MKS_ToLowercase(result);
-    result = MKS_Trim(result);
+    std::string result = text;
+    MKS_Substitute(result, this->m_UselessCharacters, "");
+    MKS_ToLowercase(result);
+    MKS_Trim(result);
     
     return result;
   }
@@ -115,11 +145,10 @@ namespace markov {
     buffer = random_iter->first;
 
     this->PrepareModel();
-    // this->LogModel();
-    while (count != wordsLimit) {
+    while (count < wordsLimit) {
       result += buffer + " ";
+      count += MKS_SplitWordByDelim(buffer, ' ').size();
       buffer = this->WalkthroughModel(buffer);
-      count++;
     }
 
     return result;

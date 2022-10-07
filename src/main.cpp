@@ -3,16 +3,12 @@
 #include "./MarkovTextGen.hpp"
 
 int main() {
-  // State, Transition Probaility 
-  // In text generator
-  // State = text
-  // Transition Probaility = the next after it
   srand(time(NULL));
 
   markov::MarkovTextGen generator = markov::MarkovTextGen();
-  generator.FeedTextFromFile("./training-text/more-training-text.txt");
-  generator.FeedTextFromFile("./training-text/training-text.txt");
-
+  generator.SetContextSize(6);
+  generator.SlurpAllFileFromFolder("./training-text/vietnamese");
+  
   std::cout << generator.GenerateText(100) << std::endl;
 
   return 0;

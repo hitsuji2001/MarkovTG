@@ -7,8 +7,9 @@
 #include <cstring>
 #include <ctime>
 
-#include <unordered_map>
 #include <fstream>
+#include <filesystem>
+#include <unordered_map>
 
 #include "./MKS.hpp"
 
@@ -19,6 +20,7 @@ namespace markov {
 
   class MarkovTextGen {
   public:
+    void SlurpAllFileFromFolder(const std::string& folderPath);
     void FeedTextFromFile(const std::string& filePath);
     const std::string GenerateText(size_t wordsLimit);
     
@@ -33,6 +35,8 @@ namespace markov {
   private:
     void PrepareModel();
     std::string WalkthroughModel(const std::string& start);
+
+    const std::string GetWeightedRandomNumber(const std::unordered_map<std::string, float>& map);
 
     float CalculateSumOfValues(const std::unordered_map<std::string, float>& map);
     std::string CleanText(const std::string& text);

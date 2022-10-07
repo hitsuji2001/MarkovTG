@@ -1,41 +1,27 @@
 #include "../header/MKS.hpp"
 
 namespace markov {
-  std::string MKS_Trim(const std::string& input) {
-    std::string result = MKS_Ltrim(input);
-    result = MKS_Rtrim(result);
-    return result;
+  void MKS_Trim(std::string& input) {
+    MKS_Ltrim(input);
+    MKS_Rtrim(input);
   }
 
-  std::string MKS_Rtrim(const std::string& input) {
-    std::string result = "";
-    for (int i = input.length() - 1; i >= 0; i--) {
-      if (std::isspace(input.at(i))) continue;
-      else {
-	result = input.substr(0, i + 1);
-	break;
-      }
-    }
-
-    return result;
+  void MKS_Rtrim(std::string& input) {
+    int i;
+    for (i = input.length() - 1; i >= 0; i--)
+      if (!std::isspace(input.at(i))) break;
+    input = input.substr(0, i + 1);
   }
 
-  std::string MKS_Ltrim(const std::string& input) {
-    std::string result = "";
-    for (size_t i = 0; i < input.length(); ++i) {
-      if (std::isspace(input.at(i))) continue;
-      else {
-	result = input.substr(i);
-	break;
-      }
-    }
-
-    return result;
+  void MKS_Ltrim(std::string& input) {
+    size_t i;
+    for (i = 0; i < input.length(); ++i) 
+      if (!std::isspace(input.at(i))) break;
+    input = input.substr(i);
   }
 
-  std::string MKS_Substitute(const std::string& input, const std::string& delim, const std::string& replace) {
+  void MKS_Substitute(std::string& input, const std::string& delim, const std::string& replace) {
     std::string result = "";
-
     for (size_t i = 0; i < input.length(); ++i) {
       bool exist = false;
       for (size_t j = 0; j < delim.length(); ++j) {
@@ -47,48 +33,50 @@ namespace markov {
       if (exist) result += replace;
       else result += input.at(i);
     }
+    input = result;
+  }
+
+  std::vector<std::string> MKS_SplitWordByDelim(std::string& input, const char delim, size_t count) {
+    std::vector<std::string> result;
+    std::string string;
+    size_t index;
+
+    if (count > 0) {
+      size_t c = 0;
+      for (index = 0; index < input.length(); ++index) {
+	if (input.at(index) == delim) {
+	  string += delim;
+	  c++;
+	}
+	else if (input.at(index) != delim) string += input.at(index);
+	if (c == count) break;
+      }
+      input = input.substr(index);
+      MKS_Trim(string);
+      MKS_Trim(input);
+      result.push_back(string);
+    } else if (count == 0) {
+      for (index = 0; index < input.length(); ++index) {
+	if (input.at(index) == delim) {
+	  result.push_back(string);
+	  string = "";
+	} else string += input.at(index);
+      }
+      if (!string.empty()) result.push_back(string);
+    }
 
     return result;
   }
 
-  std::string MKS_SplitWordByDelim(const std::string& input, const char delim, size_t count) {
-    std::string result = "";
-    size_t c = 0;
-
-    for (size_t i = 0; i < input.length(); ++i) {
-      if (input.at(i) == delim) {
-	result += delim;
-	c++;
-      }
-      else if (input.at(i) != delim) result += input.at(i);
-      if (c == count) break;
-    }
-
-    return MKS_Trim(result);
+  void MKS_ToLowercase(std::string& input) {
+    for (size_t i = 0; i < input.length(); ++i)
+      input.at(i) = std::tolower(input.at(i));
   }
 
-  std::string MKS_CutLeftByDelim(const std::string& input, const char delim, size_t count) {
-    std::string result = "";
-    size_t c = 0;
+  bool MKS_EndsWith(const std::string& input, const std::string& suffix) {
+    if (input.length() >= suffix.length()) 
+      return input.compare(input.length() - suffix.length(), suffix.length(), suffix) == 0;
 
-    for (size_t i = 0; i < input.length(); ++i) {
-      if (input.at(i) != delim) continue;
-      else if (input.at(i) == delim) c++;
-      if (c == count) {
-	result = input.substr(i);
-	break;
-      }
-    }
-
-    return MKS_Trim(result);
-  }
-
-  std::string MKS_ToLowercase(const std::string& input) {
-    std::string result = "";
-    for (size_t i = 0; i < input.length(); ++i) {
-      result += std::tolower(input.at(i));
-    }
-
-    return result;
+    return false;
   }
 }
